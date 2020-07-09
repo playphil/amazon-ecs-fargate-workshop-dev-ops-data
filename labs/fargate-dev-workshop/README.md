@@ -158,7 +158,7 @@ Push your changes to your source repository
     git commit -m "fixed docker FROM to a pinned version"
     git push origin master
 
-## Lab 3: Deploy ECS / Farate cluster
+## Lab 3: Deploy ECS / Fargate cluster
 
 #### Infrastrcuture Deployment
 
