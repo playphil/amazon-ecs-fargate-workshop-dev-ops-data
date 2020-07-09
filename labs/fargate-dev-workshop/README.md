@@ -64,9 +64,9 @@ Update to the latest version of pip
 
 Now we install some CDK modules.
 
-    pip install awscli
-    pip install --upgrade aws-cdk.core
-    pip install -r requirements.txt
+    /usr/local/bin/pip install awscli
+    /usr/local/bin/pip install --upgrade aws-cdk.core
+    /usr/local/bin/pip install -r requirements.txt
 
 Create the file `~/.aws/config` with these lines specifying your choice of region and your own account number:
 
