@@ -8,13 +8,13 @@ First, we'll use the [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/home
 
 #### Note your account and region
 
-Pick an AWS region to work in, such as `us-west-2`.  We'll refer to this as `REGION` going forward.
+Pick an AWS region to work in, such as `us-west-2`.  We'll refer to this as $REGION going forward.
 
-Also note your AWS account number.  You find this in the console or by running `aws sts get-caller-identity` on the CLI.  We'll refer to this as `ACCOUNT` going forward.
+Also note your AWS account number.  You find this in the console or by running `aws sts get-caller-identity` on the CLI.  We'll refer to this as $ACCOUNT going forward.
 
 #### Set up a Cloud9 IDE
 
-In the AWS console, go to the Cloud9 service and select `Create environment`.  Call your new IDE `FargateIDE` and click `Next Step`.  On the next screen, change the instance type to `m4.large` and click `Next step` again.  On the final page, click `Create environment`.  Make sure that you leave the VPC settings at the default values.
+In the AWS console, go to the Cloud9 service and select `Create environment`.  Call your new IDE `FargateIDE` and click `Next Step`.  On the next screen, change the instance type to `m4.large` and click `Next step` again.  On the final page, click `Create environment`.  Make sure that you leave the VPC settings at the default values. Be sure to add any tag values required within your company.  
 
 Once the environment builds, you'll automatically redirect to the IDE.  Take a minute to explore the interface, and note that you can change the color scheme if you like (AWS Cloud9 menu -> Preferences -> Themes).
 
@@ -26,6 +26,7 @@ Next, let's update the Cloud9 environment to let you run the labs from the envir
     * Select `AWS service` for the entity and leave the service set to `EC2`.
     * On the next screen, choose `Create policy`.
     * Switch to the JSON tab and paste in the contents of the file `cloud9-iam.json`.
+         https://github.com/aws-samples/amazon-ecs-fargate-workshop-dev-ops-data/blob/master/labs/cloud9-iam.json
     * Call the policy `Cloud9-fargate-policy`.
     * Click `Create policy`.
     * Switch back to the browser tab with the new role, and assign the policy you just made.
@@ -45,7 +46,16 @@ Git clone the workshop repo:
 
 In your Cloud 9 environment, install the CDK and update some dependencies:
 
-    npm install -g aws-cdk@1.19.0
+    Validate that you have aws-cdk already installed
+    npm list -g aws-cdk 
+    If you chose an Amazon Linux AMI aws-cdk will be pre-installed and npm list will show output including "aws-cdk@1.xx.x"
+    
+    If you need to install aws-cdk you can run the following command
+    npm install -g aws-cdk
+    
+    You can check the install location and version to verify
+    which cdk
+    cdk --version
     
 Update to the latest version of pip
 
@@ -58,21 +68,23 @@ Now we install some CDK modules.
     pip install --upgrade aws-cdk.core
     pip install -r requirements.txt
 
-Create the file `~/.aws/config` with these lines:
+Create the file `~/.aws/config` with these lines specifying your choice of region and your own account number:
 
     [default]
-    region=REGION
-    account=ACCOUNT
+    region=<REGION>
+    account=<ACCOUNT>
 
-Set environment variables which will be used later
+Set environment variables which will be used within later commands.
 
-    AWS_REGION=`aws configure get region`
-    echo $AWS_REGION
+    REGION=`aws configure get region`
+    echo $REGION
+    ACCOUNT=`aws configure get account`
+    echo $ACCOUNT
     
-We're now ready to deploy the prerequisites.  Run the following, making sure to substitute the proper values for your `ACCOUNT` and `REGION`.
+We're now ready to deploy the prerequisites.
 
     touch ~/.aws/credentials
-    cdk bootstrap aws://ACCOUNT/REGION
+    cdk bootstrap aws://$ACCOUNT/$REGION
     cdk synth
     cdk deploy pipeline-to-ecr
 
@@ -94,12 +106,13 @@ pipeline image here
 Let's connect to the a Git repository. We'll do this manually as setting up development tools is often done by hand.
 In the console, navigate to CodeCommit.
 
-Follow the instructions on the console to clone your new repo into a local folder in Cloud9.
-
+From the Repositories list in CodeCommit, copy your "HTTPS (GRC)" Clone URL for fargate-def-workshop-app-repo
+   This should similar to "codecommit::us-west-2://fargate-dev-workshop-app-repo"
+   
 #### Initial Push
     
     git init . 
-    git remote add origin <CodeCommit_Repo>
+    git remote add origin <CodeCommit_Repo HTTPS (GRC) URL>
     git add .
     git commit -m "Initial commit"
     git push origin master
@@ -121,6 +134,7 @@ This can cause issues of having an unwanted version deployed.
 Similar to ensuring you do not use the :latest tag for your containers. 
 It is also suggested to specify package version you install on your containers.
 You want to avoid the chance of an unwanted package being deployed.
+Be sure to schedule regular refactoring to update dependency versions, test, and deploy.  This will ensure your application incorporates their latest security patches and performance updates.  
 
 If you do not specify a USER in a Dockerfile, the container will run as ROOT permissions. 
 It is best practice to ensure the container is limited to least privilege. 
@@ -133,12 +147,12 @@ before
     RUN apk -q add libcap
 after
 
-    FROM httpd:2.4.41
+    FROM httpd:2.4.41-alpine
     RUN apk -q add libcap=2.27-r0 --no-cache
     
-These changes ensure we are pulling a certain version of the base docker image as well as the package we are adding to our container.
+These changes ensure we are pulling a certain version of the base alpine os image from docker hub, as well as the package we are adding to our container.
 
-Push your changes
+Push your changes to your source repository
 
     git add .
     git commit -m "fixed docker FROM to a pinned version"
@@ -161,7 +175,7 @@ Now we will deploy Test Environment Stack
     
 This stack will deploy the VPC, ECS Cluster, Load Balancer, and AutoScaling groups.
 
-When the stack has finished deploying it should display the output of the load balancers url.
+When the stack has finished deploying it should display the output of the load balancers url similar to:
     
     ecs-inf-test.lburl = ecs-i-loadb-11111111-11111111.us-west-2.elb.amazonaws.com
     
@@ -178,7 +192,7 @@ Go to Tasks, and stop all running tasks.
 
 #### Navigate back configs
 
-In your Cloud9 editior, open the file configs/docker_build_base.yml.
+In your Cloud9 editior, open the file configs/docker_build_base.yml
 
 Change the following
 Before:
@@ -197,7 +211,7 @@ These changes will modify the tag which the container is tagged with in your ECR
 The new tag will be the build guid which produced the image. 
 You can also use this guid to track back which code build action actually built the container.
 
-open /app/index.html and add some text to the body of the html to visualize changes made.
+open app/index.html and add some text to the body of the html to visualize changes made.
 
 Push your changes
 
@@ -218,28 +232,28 @@ Once your previous push has completed and is built.
 
 This script will produce the correct configs needed for the deployment. This script will query the previous environment we deploy to populate variables.
 You will need to pass in the most currect docker image tag.
-
-    python produce-configs.py fargate-dev-workshop test <aws acc number>dkr.ecr.<aws region>.amazonaws.com/fargate-dev-workshop:<gui>
+    cd configs
+    python produce-configs.py fargate-dev-workshop test $ACCOUNTdkr.ecr.$REGION.amazonaws.com/fargate-dev-workshop:<IMAGE_TAG>
 
 Once we have created the nessessary config files we can begin to create our new service.
 
 #### Create ECS service
 
-    aws ecs create-service --region us-west-2 --service-name fargate-dev-workshop-test --cli-input-json file://./service-definition-test.json
+    aws ecs create-service --region $REGION --service-name fargate-dev-workshop-test --cli-input-json file://./service-definition-test.json
 
 #### Create Code Deploy application
 
-    aws deploy create-application --region us-west-2 --application-name fargate-dev-workshop-test --compute-platform ECS
+    aws deploy create-application --region $REGION --application-name fargate-dev-workshop-test --compute-platform ECS
 
 
 #### Create Code Deploy deployment groups
 
-    aws deploy create-deployment-group --region us-west-2 \
+    aws deploy create-deployment-group --region $REGION \
      --deployment-group-name ecs-fargate-workshop-test-dg --cli-input-json file://./deployment-group-test.json
 
 #### Deployment changes
 
-    aws ecs deploy --region us-west-2 --service 'fargate-dev-workshop-test'  \
+    aws ecs deploy --region $REGION --service 'fargate-dev-workshop-test'  \
      --cluster 'fargate-dev-workshop-test' --codedeploy-application 'fargate-dev-workshop-test' \
      --codedeploy-deployment-group 'ecs-fargate-workshop-test-dg' \
      --task-definition task-definition-test.json --codedeploy-appspec appsectest.json
@@ -313,7 +327,7 @@ The run the following commands in the /configs/ directory:
 
 Deploy the updated container and task definition specifying fewer resources.
 
-    aws ecs deploy --region us-west-2 --service 'fargate-dev-workshop-test'  \
+    aws ecs deploy --region $REGION --service 'fargate-dev-workshop-test'  \
      --cluster 'fargate-dev-workshop-test' --codedeploy-application 'fargate-dev-workshop-test' \
      --codedeploy-deployment-group 'ecs-fargate-workshop-test-dg' \
      --task-definition task-definition-test.json --codedeploy-appspec appsectest.json
