@@ -338,4 +338,5 @@ Deploy the updated container and task definition specifying fewer resources.
     aws deploy delete-application --application-name fargate-dev-workshop-test
     aws cloudformation delete-stack --stack-name ecs-fargate-workshop-traffic
     cdk destroy ecs-inf-test
+    aws ecr delete-repository --repository-name fargate-dev-workshop --force
     cdk destroy pipeline-to-ecr
