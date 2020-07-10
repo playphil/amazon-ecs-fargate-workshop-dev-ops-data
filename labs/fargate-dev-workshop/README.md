@@ -59,8 +59,7 @@ In your Cloud 9 environment, install the CDK and update some dependencies:
     
 Update to the latest version of pip
 
-    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-    python get-pip.py
+    sudo pip install --upgrade pip
 
 Now we install some CDK modules.
 
