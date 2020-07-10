@@ -231,6 +231,7 @@ Once your previous push has completed and is built.
 
 This script will produce the correct configs needed for the deployment. This script will query the previous environment we deploy to populate variables.
 You will need to pass in the most currect docker image tag.
+
     cd configs
     python produce-configs.py fargate-dev-workshop test $ACCOUNTdkr.ecr.$REGION.amazonaws.com/fargate-dev-workshop:<IMAGE_TAG>
 
